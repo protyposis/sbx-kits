@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# install-traffic-inspection-ca — Install a corporate CA certificate for TLS traffic inspection.
+# Runs as root at each sandbox start via spec.yaml startup command.
+set -euo pipefail
+
+INSPECTION_CA_CERT_PATH="${INSPECTION_CA_CERT_PATH:-}"
+INSPECTION_DETECT_URL="${INSPECTION_DETECT_URL:-https://example.com}"
+DEFAULT_PATH_FILE="/home/agent/.traffic-inspection-ca/default-cert-path"
+
+# Resolve cert destination directory based on the available trust store tool.
+if command -v update-ca-certificates >/dev/null 2>&1; then
+  CERT_DEST="/usr/local/share/ca-certificates/traffic-inspection-ca.crt"
+  update_trust() { update-ca-certificates; }
+elif command -v update-ca-trust >/dev/null 2>&1; then
+  CERT_DEST="/etc/pki/ca-trust/source/anchors/traffic-inspection-ca.crt"
+  update_trust() { update-ca-trust extract; }
+else
+  echo "install-traffic-inspection-ca: No supported CA trust store found (update-ca-certificates / update-ca-trust). Skipping." >&2
+  exit 0
+fi
+
+install_pem() {
+  local src="$1"
+  if ! grep -q "BEGIN CERTIFICATE" "$src" 2>/dev/null; then
+    echo "install-traffic-inspection-ca: $src does not look like a PEM certificate. Skipping." >&2
+    return 1
+  fi
+  echo "install-traffic-inspection-ca: Installing CA certificate from $src" >&2
+  mkdir -p "$(dirname "$CERT_DEST")"
+  cp "$src" "$CERT_DEST"
+  chmod 644 "$CERT_DEST"
+  update_trust
+  echo "install-traffic-inspection-ca: CA certificate installed." >&2
+  echo "install-traffic-inspection-ca: Installed certificate details:" >&2
+  openssl x509 -in "$CERT_DEST" -noout \
+    -subject -issuer -dates -fingerprint -sha256 2>/dev/null >&2 || true
+}
+
+# --- 1. Explicit path from INSPECTION_CA_CERT_PATH env var ---
+if [[ -n "$INSPECTION_CA_CERT_PATH" ]]; then
+  if [[ -f "$INSPECTION_CA_CERT_PATH" ]]; then
+    install_pem "$INSPECTION_CA_CERT_PATH" && exit 0
+  else
+    echo "install-traffic-inspection-ca: INSPECTION_CA_CERT_PATH=$INSPECTION_CA_CERT_PATH is set but the file was not found." >&2
+  fi
+fi
+
+# --- 2. Workspace default: inspection-ca.pem at the workspace root ---
+if [[ -f "$DEFAULT_PATH_FILE" ]]; then
+  workspace_cert=$(cat "$DEFAULT_PATH_FILE")
+  if [[ -f "$workspace_cert" ]]; then
+    echo "install-traffic-inspection-ca: Found certificate at workspace default: $workspace_cert" >&2
+    install_pem "$workspace_cert" && exit 0
+  fi
+fi
+
+# --- 3. Auto-detect: probe for TLS interception and extract the CA ---
+echo "install-traffic-inspection-ca: No certificate file found; probing $INSPECTION_DETECT_URL for TLS interception..." >&2
+
+if curl -sSf --max-time 15 "$INSPECTION_DETECT_URL" -o /dev/null 2>/dev/null; then
+  echo "install-traffic-inspection-ca: TLS verification succeeded; no interception detected. Nothing to install." >&2
+  exit 0
+fi
+
+if ! curl -sSf --max-time 15 --insecure "$INSPECTION_DETECT_URL" -o /dev/null 2>/dev/null; then
+  echo "install-traffic-inspection-ca: $INSPECTION_DETECT_URL is unreachable even without certificate verification; possible network issue. Skipping." >&2
+  exit 0
+fi
+
+# TLS fails normally but succeeds without verification: certificate error,
+# likely caused by an intercepting proxy presenting its own CA.
+echo "install-traffic-inspection-ca: TLS interception detected; extracting CA from certificate chain..." >&2
+
+url_no_scheme="${INSPECTION_DETECT_URL#https://}"
+host_port="${url_no_scheme%%/*}"
+host="${host_port%%:*}"
+port="${host_port##*:}"
+[[ "$port" == "$host" ]] && port=443
+
+TMPFILE=$(mktemp /tmp/traffic-inspection-ca-XXXXXX.pem)
+trap 'rm -f "$TMPFILE"' EXIT
+
+# Extract the CA certificates from the chain (skip the leaf/server cert at
+# position 1; keep all subsequent certs which are intermediate and root CAs).
+openssl s_client \
+  -connect "${host}:${port}" \
+  -servername "$host" \
+  -showcerts \
+  </dev/null 2>/dev/null \
+  | awk '
+    /-----BEGIN CERTIFICATE-----/ { n++; cert = "" }
+    { cert = cert "\n" $0 }
+    /-----END CERTIFICATE-----/ { if (n > 1) print substr(cert, 2) }
+  ' > "$TMPFILE"
+
+if [[ ! -s "$TMPFILE" ]]; then
+  echo "install-traffic-inspection-ca: Could not extract CA certificates from $INSPECTION_DETECT_URL. Skipping." >&2
+  exit 0
+fi
+
+install_pem "$TMPFILE"
