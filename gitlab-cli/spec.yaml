@@ -12,9 +12,17 @@ commands:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.profile"
         fi
+        if ! grep -q 'linuxbrew' /etc/sandbox-persistent.sh 2>/dev/null; then
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /etc/sandbox-persistent.sh
+        fi
+      user: "1000"
+      description: Install Homebrew (if absent) and add to PATH for all sandbox entry points
+    - command: |
+        set -eu
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         brew install glab
       user: "1000"
-      description: Install Homebrew (if absent) and glab GitLab CLI
+      description: Install GitLab CLI
 
   startup:
     - command:
@@ -57,10 +65,10 @@ commands:
           # Skip if it resolves to the default
           [ "$host" = "gitlab.com" ] && exit 0
 
-          # Write the detected host for login shells
-          printf "export GITLAB_HOST='%s'\n" "$host" > /etc/profile.d/gitlab-host.sh
+          # Write the detected host for all sandbox entry points
+          printf "export GITLAB_HOST='%s'\n" "$host" >> /etc/sandbox-persistent.sh
           echo "gitlab-cli: GITLAB_HOST set to $host (detected from git origin)" >&2
-      user: "0"
+      user: "1000"
       description: Auto-detect GitLab host from workspace git origin
 
   initFiles:
