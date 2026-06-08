@@ -57,7 +57,7 @@ commands:
           update_trust
           echo "traffic-inspection-ca: Installed certificate details:" >&2
           openssl x509 -in "$CERT_DEST" -noout \
-            -subject -issuer -dates -fingerprint -sha256 2>/dev/null >&2 || true
+            -subject -issuer -dates -fingerprint -sha256 >&2 2>/dev/null || true
         }
 
         DETECT_URL="${INSPECTION_DETECT_URL:-https://example.com}"
