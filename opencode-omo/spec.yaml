@@ -1,0 +1,42 @@
+schemaVersion: "2"
+kind: mixin
+name: opencode-omo
+version: "1"
+
+commands:
+  install:
+    - command: |
+        set -eu
+        if ! command -v bun >/dev/null 2>&1; then
+          if command -v npm >/dev/null 2>&1; then
+            npm install -g bun
+          else
+            curl -fsSL https://bun.sh/install | bash
+          fi
+        fi
+        echo 'export BUN_INSTALL="$HOME/.bun"' >> "$HOME/.profile"
+        echo 'export PATH="$HOME/.bun/bin:$PATH"' >> "$HOME/.profile"
+      user: "1000"
+      description: Install Bun for bunx-based Oh My OpenAgent installer
+    - command: |
+        set -eu
+        export BUN_INSTALL="$HOME/.bun"
+        export PATH="$HOME/.bun/bin:$PATH"
+        bunx oh-my-openagent install \
+          --no-tui \
+          --platform=opencode \
+          --claude=no \
+          --openai=yes \
+          --gemini=no \
+          --copilot=no \
+          --opencode-zen=no \
+          --zai-coding-plan=no \
+          --opencode-go=yes \
+          --kimi-for-coding=no \
+          --vercel-ai-gateway=no \
+          --skip-auth
+      user: "1000"
+      description: Install Oh My OpenAgent for OpenCode with OpenAI and OpenCode Go enabled
+
+memory: |
+  Oh My OpenAgent is installed and configured for OpenCode with OpenAI/ChatGPT and OpenCode Go providers enabled.

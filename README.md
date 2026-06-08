@@ -1,74 +1,56 @@
-# OpenCode + OpenChamber Docker Sandbox Kit
+# sbx-kits
 
-This version fixes the stale initial artifact:
+A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](https://docs.docker.com/ai/sandboxes/customize/kits/). Each subdirectory is a self-contained kit that can be used independently or composed together.
 
-- OpenChamber is **not** started before OpenCode is available.
+## Kits
 
-## Run
+| Directory | Kind | Purpose |
+|---|---|---|
+| [`opencode-openchamber/`](./opencode-openchamber/) | sandbox | OpenCode TUI + OpenChamber web UI side-car |
+| [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
+| [`opencode-go-auth/`](./opencode-go-auth/) | mixin | Proxy-managed OpenCode Go API key injection |
 
-```bash
-# First run
-sbx run opencode-openchamber --kit ./opencode-openchamber-kit ~/my-project
+## Quick start
 
-# Re-run
-sbx run opencode-openchamber-<name> --kit ./opencode-openchamber-kit
-
-# Open port to Openchamber
-sbx ports opencode-openchamber-<name> --publish 3000:3000
-```
-
-## Startup order
-
-The wrapper starts a background watcher, then immediately execs the foreground OpenCode TUI:
+### OpenCode + OpenChamber (sandbox)
 
 ```bash
-start_openchamber_after_opencode_ready &
-exec opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
+sbx run opencode-openchamber --kit ./opencode-openchamber ~/my-project
+
+# Expose the OpenChamber web UI in a browser
+sbx ports <sandbox-name> --publish 3000:3000
 ```
 
-The watcher waits for the fixed OpenCode port to be reachable, then starts OpenChamber:
+### Oh My OpenAgent (mixin)
 
 ```bash
-openchamber --lan --port "$OPENCHAMBER_PORT"
+sbx run opencode --kit ./opencode-omo ~/my-project
 ```
 
-## Fixed ports
+### OpenCode Go authentication (mixin)
 
-```text
-OPENCODE_HOSTNAME=127.0.0.1
-OPENCODE_PORT=4096
-OPENCHAMBER_PORT=3000
-OPENCHAMBER_OPENCODE_HOSTNAME=127.0.0.1
-OPENCHAMBER_OPENCODE_PORT=4096
+```bash
+# Store your API key once on the host
+sbx secret set -g opencode-go
+
+sbx run opencode --kit ./opencode-go-auth ~/my-project
 ```
 
-## OpenCode Go authentication
+### Composing kits
 
-The kit uses the Docker sandbox proxy to inject the OpenCode Go API key. Store the key on the host before launching the sandbox:
+Kits can be stacked with multiple `--kit` flags:
 
 ```bash
 sbx secret set -g opencode-go
+
+sbx run opencode \
+  --kit ./opencode-go-auth \
+  --kit ./opencode-omo \
+  ~/my-project
 ```
 
-The `opencode-go` provider will be available
-immediately inside OpenCode without any `/connect` step.
+## Troubleshooting
 
-## Oh My OpenAgent
+### `ERROR: failed to create agent sandbox: agent "opencode-openchamber" not found`
 
-The installer is run with ChatGPT/OpenAI and OpenCode Go enabled:
-
-```bash
-bunx oh-my-openagent install \
-  --no-tui \
-  --platform=opencode \
-  --claude=no \
-  --openai=yes \
-  --gemini=no \
-  --copilot=no \
-  --opencode-zen=no \
-  --zai-coding-plan=no \
-  --opencode-go=yes \
-  --kimi-for-coding=no \
-  --vercel-ai-gateway=no \
-  --skip-auth
-```
+The kit must also be specified when running an existing sandbox, i.e., `sbx run --kit ./sbx-kits/opencode-openchamber/ <sandbox-name>` instead of `sbx run opencode-openchamber-myproject`.

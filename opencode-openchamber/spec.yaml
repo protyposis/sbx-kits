@@ -1,0 +1,41 @@
+schemaVersion: "2"
+kind: sandbox
+name: opencode-openchamber
+version: "3"
+
+sandbox:
+  image: "docker/sandbox-templates:opencode"
+  aiFilename: AGENTS.md
+  entrypoint:
+    run: ["bash", "/home/agent/bin/start-opencode-openchamber"]
+
+environment:
+  variables:
+    IS_SANDBOX: "1"
+    OPENCODE_HOSTNAME: "127.0.0.1"
+    OPENCODE_PORT: "4096"
+    OPENCHAMBER_PORT: "3000"
+    OPENCHAMBER_OPENCODE_HOSTNAME: "127.0.0.1"
+    OPENCHAMBER_OPENCODE_PORT: "4096"
+
+commands:
+  install:
+    - command: |
+        set -eu
+        if command -v apt-get >/dev/null 2>&1; then
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates unzip jq bash git procps netcat-openbsd
+        fi
+      description: Install base utilities required by OpenChamber and installers
+    - command: |
+        set -eu
+        command -v openchamber >/dev/null 2>&1 || npm install -g @openchamber/web
+      user: "1000"
+      description: Install OpenChamber web CLI
+
+memory: |
+  This sandbox serves OpenChamber as OpenCode Web UI.
+
+  Runtime ports:
+  - OpenCode TUI/server: http://127.0.0.1:4096
+  - OpenChamber web UI: http://127.0.0.1:3000, LAN-bound by OpenChamber via --lan
