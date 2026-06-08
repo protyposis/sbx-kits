@@ -1,10 +1,11 @@
 # traffic-inspection-ca
 
-> **Warning**: Only use this mixin when you are certain that TLS traffic
-> inspection in your environment is legitimate and explicitly authorized by your
-> organization (for example, a corporate ZScaler proxy). Installing a CA
-> certificate allows its owner to silently intercept all TLS connections from
-> the sandbox. Never install a certificate from an unknown or untrusted source.
+> [!WARNING]
+> Only use this mixin when you are certain that TLS traffic inspection in your
+> environment is legitimate and explicitly authorized by your organization (for
+> example, a corporate ZScaler proxy). Installing a CA certificate allows its
+> owner to silently intercept all TLS connections from the sandbox. Never
+> install a certificate from an unknown or untrusted source.
 
 A mixin that installs a corporate CA certificate into the sandbox's system
 trust store so TLS traffic works in environments where connections are
