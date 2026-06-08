@@ -31,15 +31,15 @@ Both are equivalent — the credentials resolver checks host env vars as well as
 ### 2. Apply the mixin
 
 ```bash
-sbx run opencode --kit ./opencode-go-auth ~/my-project
+sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-go-auth" ~/my-project
 ```
 
 Stack with other kits as needed:
 
 ```bash
 sbx run opencode \
-  --kit ./opencode-go-auth \
-  --kit ./opencode-omo \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-go-auth" \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-omo" \
   ~/my-project
 ```
 

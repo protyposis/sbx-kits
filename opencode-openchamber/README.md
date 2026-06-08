@@ -15,7 +15,7 @@ Runs [OpenCode](https://opencode.ai) as the primary TUI/server and starts [OpenC
 
 ```bash
 # Create the sandbox
-sbx run opencode-openchamber --kit ./opencode-openchamber ~/my-project
+sbx run opencode-openchamber --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-openchamber" ~/my-project
 
 # Publish the OpenChamber port so you can open it in a browser
 sbx ports <sandbox-name> --publish 3000:3000

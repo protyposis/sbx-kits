@@ -28,7 +28,7 @@ export GITLAB_HOST=gitlab.example.com
 ### 3. Apply the mixin
 
 ```bash
-sbx run opencode --kit ./gitlab-cli ~/my-project
+sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=gitlab-cli" ~/my-project
 ```
 
 `glab` is available immediately — for example `glab issue list` or `glab mr create`.

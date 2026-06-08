@@ -17,15 +17,15 @@ Installs [Oh My OpenAgent](https://github.com/oh-my-openagent/oh-my-openagent) f
 Apply as a mixin on top of any OpenCode-based sandbox:
 
 ```bash
-sbx run opencode --kit ./opencode-omo ~/my-project
+sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-omo" ~/my-project
 ```
 
 Or stack it with other kits:
 
 ```bash
 sbx run opencode \
-  --kit ./opencode-omo \
-  --kit ./opencode-go-auth \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-omo" \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-go-auth" \
   ~/my-project
 ```
 
