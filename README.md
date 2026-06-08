@@ -6,12 +6,12 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 
 | Directory | Kind | Purpose |
 |---|---|---|
-| [`opencode-openchamber/`](./opencode-openchamber/) | sandbox | OpenCode TUI + OpenChamber web UI side-car |
-| [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
-| [`opencode-go-auth/`](./opencode-go-auth/) | mixin | Proxy-managed OpenCode Go API key injection |
-| [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
-| [`traffic-inspection-ca/`](./traffic-inspection-ca/) | mixin | Install corporate CA certificate for TLS inspection (e.g., ZScaler) |
 | [`github-copilot-enterprise-auth/`](./github-copilot-enterprise-auth/) | mixin | Extend built-in GitHub token auth to Copilot Enterprise endpoints |
+| [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
+| [`opencode-go-auth/`](./opencode-go-auth/) | mixin | Proxy-managed OpenCode Go API key injection |
+| [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
+| [`opencode-openchamber/`](./opencode-openchamber/) | sandbox | OpenCode TUI + OpenChamber web UI side-car |
+| [`traffic-inspection-ca/`](./traffic-inspection-ca/) | mixin | Install corporate CA certificate for TLS inspection (e.g., ZScaler) |
 
 ## Quick start
 
