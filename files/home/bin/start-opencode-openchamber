@@ -61,5 +61,30 @@ start_openchamber_after_opencode_ready() {
   echo "OpenChamber started in the background on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
 }
 
+inject_opencode_go_credential() {
+  # OPENCODE_GO_API_KEY is set to "proxy-managed" inside the VM by the sandbox
+  # proxy. Write it to auth.json so OpenCode uses it without a /connect step.
+  # The proxy intercepts outbound requests to opencode.ai and replaces the
+  # Authorization header with the real credential before forwarding.
+  local key="${OPENCODE_GO_API_KEY:-}"
+  if [ -z "$key" ]; then
+    return 0
+  fi
+
+  local auth_file="$HOME/.local/share/opencode/auth.json"
+  mkdir -p "$(dirname "$auth_file")"
+
+  if [ -f "$auth_file" ] && command -v jq >/dev/null 2>&1; then
+    local tmp
+    tmp=$(jq --arg k "$key" '.["opencode-go"] = {"type": "api", "key": $k}' "$auth_file") && \
+      printf '%s\n' "$tmp" > "$auth_file"
+  else
+    printf '{"opencode-go":{"type":"api","key":"%s"}}\n' "$key" > "$auth_file"
+  fi
+
+  echo "OpenCode Go credential written to $auth_file (proxy-managed)" >&2
+}
+
+inject_opencode_go_credential
 start_openchamber_after_opencode_ready &
 exec opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"

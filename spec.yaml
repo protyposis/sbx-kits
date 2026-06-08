@@ -9,6 +9,20 @@ sandbox:
   entrypoint:
     run: ["bash", "/home/agent/bin/start-opencode-openchamber"]
 
+network:
+  serviceDomains:
+    opencode.ai: opencode-go
+  serviceAuth:
+    opencode-go:
+      headerName: Authorization
+      valueFormat: "Bearer %s"
+
+credentials:
+  sources:
+    opencode-go:
+      env:
+        - OPENCODE_GO_API_KEY
+
 environment:
   variables:
     IS_SANDBOX: "1"
@@ -17,6 +31,8 @@ environment:
     OPENCHAMBER_PORT: "3000"
     OPENCHAMBER_OPENCODE_HOSTNAME: "127.0.0.1"
     OPENCHAMBER_OPENCODE_PORT: "4096"
+  proxyManaged:
+    - OPENCODE_GO_API_KEY
 
 commands:
   install:
@@ -75,13 +91,3 @@ memory: |
   Runtime ports:
   - OpenCode TUI/server: http://127.0.0.1:4096
   - OpenChamber web UI: http://127.0.0.1:3000, LAN-bound by OpenChamber via --lan
-
-  Startup sequence:
-  - a background watcher is started first
-  - the foreground process immediately execs the OpenCode TUI on a fixed port
-  - the watcher starts OpenChamber only after the OpenCode port is reachable
-
-  Oh My OpenAgent was installed non-interactively for OpenCode with OpenAI/ChatGPT
-  and OpenCode Go subscription support enabled. Authentication still needs to be
-  completed inside OpenCode or via `opencode auth login` for subscription-backed
-  providers.

@@ -35,6 +35,17 @@ OPENCHAMBER_OPENCODE_HOSTNAME=127.0.0.1
 OPENCHAMBER_OPENCODE_PORT=4096
 ```
 
+## OpenCode Go authentication
+
+The kit uses the Docker sandbox proxy to inject the OpenCode Go API key. Store the key on the host before launching the sandbox:
+
+```bash
+sbx secret set -g opencode-go
+```
+
+The `opencode-go` provider will be available
+immediately inside OpenCode without any `/connect` step.
+
 ## Oh My OpenAgent
 
 The installer is run with ChatGPT/OpenAI and OpenCode Go enabled:
