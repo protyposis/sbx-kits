@@ -40,8 +40,7 @@ Enterprise accounts, and GitLab access:
 
 ```bash
 # Register the GitLab token once on the host (replace with your GitLab host)
-GITLAB_HOST=gitlab.mycompany.com
-sbx secret set-custom -g --host "$GITLAB_HOST" --env GITLAB_TOKEN
+sbx secret set-custom -g --host "gitlab.mycompany.com" --env GITLAB_TOKEN
 
 sbx run copilot \
   --kit "git+https://github.com/protyposis/sbx-kits.git#dir=traffic-inspection-ca" \
