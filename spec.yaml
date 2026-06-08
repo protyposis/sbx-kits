@@ -1,0 +1,87 @@
+schemaVersion: "2"
+kind: sandbox
+name: opencode-openchamber
+version: "3"
+
+sandbox:
+  image: "docker/sandbox-templates:opencode"
+  aiFilename: AGENTS.md
+  entrypoint:
+    run: ["bash", "/home/agent/bin/start-opencode-openchamber"]
+
+environment:
+  variables:
+    IS_SANDBOX: "1"
+    OPENCODE_HOSTNAME: "127.0.0.1"
+    OPENCODE_PORT: "4096"
+    OPENCHAMBER_PORT: "3000"
+    OPENCHAMBER_OPENCODE_HOSTNAME: "127.0.0.1"
+    OPENCHAMBER_OPENCODE_PORT: "4096"
+
+commands:
+  install:
+    - command: |
+        set -eu
+        if command -v apt-get >/dev/null 2>&1; then
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates unzip jq bash git procps netcat-openbsd
+        fi
+      description: Install base utilities required by OpenChamber and installers
+    - command: |
+        set -eu
+        if ! command -v bun >/dev/null 2>&1; then
+          curl -fsSL https://bun.sh/install | bash
+        fi
+        echo 'export BUN_INSTALL="$HOME/.bun"' >> "$HOME/.profile"
+        echo 'export PATH="$HOME/.bun/bin:$PATH"' >> "$HOME/.profile"
+      user: "1000"
+      description: Install Bun for bunx-based Oh My OpenAgent installer
+    - command: |
+        set -eu
+        export BUN_INSTALL="$HOME/.bun"
+        export PATH="$HOME/.bun/bin:$PATH"
+        if ! command -v openchamber >/dev/null 2>&1; then
+          if command -v npm >/dev/null 2>&1; then
+            npm install -g @openchamber/web
+          else
+            bun add -g @openchamber/web
+          fi
+        fi
+      user: "1000"
+      description: Install OpenChamber web CLI
+    - command: |
+        set -eu
+        export BUN_INSTALL="$HOME/.bun"
+        export PATH="$HOME/.bun/bin:$PATH"
+        bunx oh-my-openagent install \
+          --no-tui \
+          --platform=opencode \
+          --claude=no \
+          --openai=yes \
+          --gemini=no \
+          --copilot=no \
+          --opencode-zen=no \
+          --zai-coding-plan=no \
+          --opencode-go=yes \
+          --kimi-for-coding=no \
+          --vercel-ai-gateway=no \
+          --skip-auth
+      user: "1000"
+      description: Install Oh My OpenAgent for OpenCode with ChatGPT/OpenAI and OpenCode Go enabled
+
+memory: |
+  This sandbox includes OpenChamber and Oh My OpenAgent.
+
+  Runtime ports:
+  - OpenCode TUI/server: http://127.0.0.1:4096
+  - OpenChamber web UI: http://127.0.0.1:3000, LAN-bound by OpenChamber via --lan
+
+  Startup sequence:
+  - a background watcher is started first
+  - the foreground process immediately execs the OpenCode TUI on a fixed port
+  - the watcher starts OpenChamber only after the OpenCode port is reachable
+
+  Oh My OpenAgent was installed non-interactively for OpenCode with OpenAI/ChatGPT
+  and OpenCode Go subscription support enabled. Authentication still needs to be
+  completed inside OpenCode or via `opencode auth login` for subscription-backed
+  providers.

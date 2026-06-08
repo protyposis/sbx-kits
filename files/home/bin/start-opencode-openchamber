@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+export PATH="$HOME/.local/bin:$BUN_INSTALL/bin:$PATH"
+
+: "${OPENCODE_HOSTNAME:=127.0.0.1}"
+: "${OPENCODE_PORT:=4096}"
+: "${OPENCHAMBER_PORT:=3000}"
+: "${OPENCHAMBER_OPENCODE_HOSTNAME:=$OPENCODE_HOSTNAME}"
+: "${OPENCHAMBER_OPENCODE_PORT:=$OPENCODE_PORT}"
+
+log_dir="$HOME/.local/state/opencode-openchamber"
+mkdir -p "$log_dir"
+
+start_openchamber_after_opencode_ready() {
+  if ! command -v openchamber >/dev/null 2>&1; then
+    echo "Warning: openchamber is not installed or not on PATH; continuing with OpenCode TUI only." >&2
+    return 0
+  fi
+
+  if pgrep -u "$(id -u)" -f "openchamber.*--port ${OPENCHAMBER_PORT}" >/dev/null 2>&1; then
+    echo "OpenChamber already running on port ${OPENCHAMBER_PORT}." >&2
+    return 0
+  fi
+
+  echo "Waiting for OpenCode on ${OPENCODE_HOSTNAME}:${OPENCODE_PORT} before starting OpenChamber..." >&2
+
+  for _ in $(seq 1 120); do
+    if command -v nc >/dev/null 2>&1; then
+      if nc -z "$OPENCODE_HOSTNAME" "$OPENCODE_PORT" >/dev/null 2>&1; then
+        break
+      fi
+    else
+      if (echo >"/dev/tcp/${OPENCODE_HOSTNAME}/${OPENCODE_PORT}") >/dev/null 2>&1; then
+        break
+      fi
+    fi
+    sleep 0.5
+  done
+
+  if command -v nc >/dev/null 2>&1; then
+    nc -z "$OPENCODE_HOSTNAME" "$OPENCODE_PORT" >/dev/null 2>&1 || {
+      echo "Warning: OpenCode did not become reachable on ${OPENCODE_HOSTNAME}:${OPENCODE_PORT}; not starting OpenChamber." >&2
+      return 0
+    }
+  else
+    (echo >"/dev/tcp/${OPENCODE_HOSTNAME}/${OPENCODE_PORT}") >/dev/null 2>&1 || {
+      echo "Warning: OpenCode did not become reachable on ${OPENCODE_HOSTNAME}:${OPENCODE_PORT}; not starting OpenChamber." >&2
+      return 0
+    }
+  fi
+
+  export OPENCHAMBER_OPENCODE_HOSTNAME
+  export OPENCHAMBER_OPENCODE_PORT
+
+  (
+    exec openchamber --lan --port "$OPENCHAMBER_PORT"
+  ) >"$log_dir/openchamber.log" 2>&1 &
+
+  echo "OpenChamber started in the background on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
+}
+
+start_openchamber_after_opencode_ready &
+exec opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
