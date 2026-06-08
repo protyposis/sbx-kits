@@ -11,6 +11,7 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 | [`opencode-go-auth/`](./opencode-go-auth/) | mixin | Proxy-managed OpenCode Go API key injection |
 | [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
 | [`traffic-inspection-ca/`](./traffic-inspection-ca/) | mixin | Install corporate CA certificate for TLS inspection (e.g., ZScaler) |
+| [`github-copilot-enterprise-auth/`](./github-copilot-enterprise-auth/) | mixin | Extend built-in GitHub token auth to Copilot Enterprise endpoints |
 
 ## Quick start
 

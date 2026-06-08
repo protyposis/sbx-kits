@@ -1,0 +1,17 @@
+schemaVersion: "2"
+kind: mixin
+name: github-copilot-enterprise-auth
+version: "1"
+displayName: GitHub Copilot Enterprise Auth
+description: >
+  Extends the built-in GitHub token auth to cover the GitHub Copilot Enterprise
+  API endpoint, so the proxy-managed token is forwarded to enterprise accounts.
+
+network:
+  serviceDomains:
+    api.enterprise.githubcopilot.com: github
+
+memory: |
+  GitHub Copilot Enterprise auth is active. The proxy-managed GitHub token is
+  forwarded to api.enterprise.githubcopilot.com in addition to the standard
+  Copilot endpoints.
