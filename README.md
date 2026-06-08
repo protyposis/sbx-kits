@@ -7,7 +7,11 @@ This version fixes the stale initial artifact:
 ## Run
 
 ```bash
+# First run
 sbx run opencode-openchamber --kit ./opencode-openchamber-kit ~/my-project
+
+# Re-run
+sbx run opencode-openchamber-<name> --kit ./opencode-openchamber-kit
 ```
 
 ## Startup order
