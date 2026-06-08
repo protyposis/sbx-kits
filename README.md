@@ -12,6 +12,9 @@ sbx run opencode-openchamber --kit ./opencode-openchamber-kit ~/my-project
 
 # Re-run
 sbx run opencode-openchamber-<name> --kit ./opencode-openchamber-kit
+
+# Open port to Openchamber
+sbx ports opencode-openchamber-<name> --publish 3000:3000
 ```
 
 ## Startup order
