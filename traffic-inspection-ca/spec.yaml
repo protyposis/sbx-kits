@@ -29,14 +29,77 @@ commands:
         fi
       description: Ensure ca-certificates, openssl, and curl are installed
 
-  initFiles:
-    - path: /home/agent/.traffic-inspection-ca/default-cert-path
-      content: "${WORKDIR}/inspection-ca.pem"
-      description: Resolve the workspace-relative default certificate path
+    - command: |
+        set -eu
+        # Inline CA installation — runs at creation time, before other kits'
+        # install commands.
 
-  startup:
-    - command: ["bash", "/home/agent/bin/install-traffic-inspection-ca"]
-      user: "0"
+        if command -v update-ca-certificates >/dev/null 2>&1; then
+          CERT_DEST="/usr/local/share/ca-certificates/traffic-inspection-ca.crt"
+          update_trust() { update-ca-certificates; }
+        elif command -v update-ca-trust >/dev/null 2>&1; then
+          CERT_DEST="/etc/pki/ca-trust/source/anchors/traffic-inspection-ca.crt"
+          update_trust() { update-ca-trust extract; }
+        else
+          echo "traffic-inspection-ca: No supported CA trust store found. Skipping." >&2
+          exit 0
+        fi
+
+        install_pem() {
+          grep -q "BEGIN CERTIFICATE" "$1" 2>/dev/null || {
+            echo "traffic-inspection-ca: $1 does not look like a PEM certificate. Skipping." >&2
+            return 1
+          }
+          echo "traffic-inspection-ca: Installing CA certificate from $1" >&2
+          mkdir -p "$(dirname "$CERT_DEST")"
+          cp "$1" "$CERT_DEST"
+          chmod 644 "$CERT_DEST"
+          update_trust
+          echo "traffic-inspection-ca: Installed certificate details:" >&2
+          openssl x509 -in "$CERT_DEST" -noout \
+            -subject -issuer -dates -fingerprint -sha256 2>/dev/null >&2 || true
+        }
+
+        DETECT_URL="${INSPECTION_DETECT_URL:-https://example.com}"
+
+        # 1. Explicit path from env var
+        if [ -n "${INSPECTION_CA_CERT_PATH:-}" ] && [ -f "$INSPECTION_CA_CERT_PATH" ]; then
+          install_pem "$INSPECTION_CA_CERT_PATH" && exit 0
+        fi
+
+        # 2. Auto-detect: probe for TLS interception
+        echo "traffic-inspection-ca: Probing $DETECT_URL for TLS interception..." >&2
+        if curl -sSf --max-time 15 "$DETECT_URL" -o /dev/null 2>/dev/null; then
+          echo "traffic-inspection-ca: TLS verification succeeded; no interception detected." >&2
+          exit 0
+        fi
+        if ! curl -sSf --max-time 15 --insecure "$DETECT_URL" -o /dev/null 2>/dev/null; then
+          echo "traffic-inspection-ca: $DETECT_URL unreachable; possible network issue. Skipping." >&2
+          exit 0
+        fi
+
+        echo "traffic-inspection-ca: TLS interception detected; extracting CA from chain..." >&2
+        url_no_scheme="${DETECT_URL#https://}"
+        host_port="${url_no_scheme%%/*}"
+        host="${host_port%%:*}"
+        port="${host_port##*:}"
+        [ "$port" = "$host" ] && port=443
+
+        TMPFILE=$(mktemp /tmp/traffic-inspection-ca-XXXXXX.pem)
+        trap 'rm -f "$TMPFILE"' EXIT
+        openssl s_client -connect "${host}:${port}" -servername "$host" \
+          -showcerts </dev/null 2>/dev/null \
+          | awk '
+              /-----BEGIN CERTIFICATE-----/ { n++; cert = "" }
+              { cert = cert "\n" $0 }
+              /-----END CERTIFICATE-----/ { if (n > 1) print substr(cert, 2) }
+            ' > "$TMPFILE"
+
+        [ -s "$TMPFILE" ] || {
+          echo "traffic-inspection-ca: Could not extract CA certificates. Skipping." >&2
+          exit 0
+        }
+        install_pem "$TMPFILE"
       description: Install corporate CA certificate into the system trust store
 
 memory: |
