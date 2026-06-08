@@ -13,6 +13,23 @@ export PATH="$HOME/.local/bin:$BUN_INSTALL/bin:$PATH"
 log_dir="$HOME/.local/state/opencode-openchamber"
 mkdir -p "$log_dir"
 
+OPENCHAMBER_PID_FILE="$log_dir/openchamber.pid"
+
+cleanup() {
+  if [[ -f "$OPENCHAMBER_PID_FILE" ]]; then
+    local pid
+    pid=$(cat "$OPENCHAMBER_PID_FILE")
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "Stopping OpenChamber (PID $pid)..." >&2
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    fi
+    rm -f "$OPENCHAMBER_PID_FILE"
+  fi
+}
+
+trap cleanup EXIT
+
 start_openchamber_after_opencode_ready() {
   if ! command -v openchamber >/dev/null 2>&1; then
     echo "Warning: openchamber is not installed or not on PATH; continuing with OpenCode TUI only." >&2
@@ -54,12 +71,12 @@ start_openchamber_after_opencode_ready() {
   export OPENCHAMBER_OPENCODE_HOSTNAME
   export OPENCHAMBER_OPENCODE_PORT
 
-  (
-    exec openchamber --lan --port "$OPENCHAMBER_PORT"
-  ) >"$log_dir/openchamber.log" 2>&1 &
+  openchamber --lan --port "$OPENCHAMBER_PORT" \
+    >"$log_dir/openchamber.log" 2>&1 &
+  echo $! >"$OPENCHAMBER_PID_FILE"
 
-  echo "OpenChamber started in the background on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
+  echo "OpenChamber started in the background (PID $(cat "$OPENCHAMBER_PID_FILE")) on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
 }
 
 start_openchamber_after_opencode_ready &
-exec opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
+opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
