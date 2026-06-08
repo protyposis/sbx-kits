@@ -12,11 +12,8 @@ commands:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.profile"
         fi
-        if ! grep -q 'linuxbrew' /etc/sandbox-persistent.sh 2>/dev/null; then
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /etc/sandbox-persistent.sh
-        fi
       user: "1000"
-      description: Install Homebrew (if absent) and add to PATH for all sandbox entry points
+      description: Install Homebrew (if absent)
     - command: |
         set -eu
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
@@ -31,8 +28,8 @@ commands:
         - |
           set -eu
 
-          # Respect manual override in sandbox-persistent.sh
-          if grep -q 'GITLAB_HOST' /etc/sandbox-persistent.sh 2>/dev/null; then
+          # Respect manual override in gitlab-host.sh
+          if grep -q 'GITLAB_HOST' /home/agent/.config/gitlab-cli/gitlab-host.sh 2>/dev/null; then
             exit 0
           fi
 
@@ -65,8 +62,8 @@ commands:
           # Skip if it resolves to the default
           [ "$host" = "gitlab.com" ] && exit 0
 
-          # Write the detected host for all sandbox entry points
-          printf "export GITLAB_HOST='%s'\n" "$host" >> /etc/sandbox-persistent.sh
+          # Write the detected host for the glab shim
+          printf "export GITLAB_HOST='%s'\n" "$host" > /home/agent/.config/gitlab-cli/gitlab-host.sh
           echo "gitlab-cli: GITLAB_HOST set to $host (detected from git origin)" >&2
       user: "1000"
       description: Auto-detect GitLab host from workspace git origin
@@ -74,12 +71,23 @@ commands:
   initFiles:
     - path: /home/agent/.config/gitlab-cli/workdir
       content: "${WORKDIR}"
+    - path: /home/agent/.local/bin/glab
+      mode: "0755"
+      content: |
+        #!/bin/sh
+        if [ -z "$GITLAB_HOST" ] && [ -f "/home/agent/.config/gitlab-cli/gitlab-host.sh" ]; then
+          . /home/agent/.config/gitlab-cli/gitlab-host.sh
+        fi
+        exec /home/linuxbrew/.linuxbrew/bin/glab "$@"
 
 memory: |
-  GitLab CLI (glab) is installed via Homebrew.
+  GitLab CLI (glab) is installed via Homebrew. A shim at ~/.local/bin/glab
+  sources the detected host before delegating to the real binary.
   GITLAB_HOST sets the default GitLab instance host. When the workspace is a Git
   repository with a self-managed GitLab origin, GITLAB_HOST is auto-detected on
-  each sandbox start.
+  each sandbox start and written to ~/.config/gitlab-cli/gitlab-host.sh.
+  To manually set the host, write `export GITLAB_HOST='<host>'` to
+  ~/.config/gitlab-cli/gitlab-host.sh.
   GITLAB_TOKEN is injected via a custom secret (sbx secret set-custom). The sandbox
   sees a placeholder which gets replaced by a proxy on the host.
 
