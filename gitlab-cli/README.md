@@ -8,7 +8,7 @@ Installs [glab](https://gitlab.com/gitlab-org/cli), the official GitLab CLI. Con
 
 | Variable | Default | Description |
 |---|---|---|
-| `GITLAB_HOST` | `gitlab.com` | The GitLab instance host `glab` defaults to. |
+| `GITLAB_HOST` | `gitlab.com` | The GitLab instance host `glab` defaults to. Auto-detected from the workspace git origin when possible. |
 | `GITLAB_TOKEN` | _(secret)_ | A GitLab personal access token with at least `api` scope. Proxy-managed — never exposed in plain environment. |
 
 ## Usage
@@ -19,16 +19,22 @@ Installs [glab](https://gitlab.com/gitlab-org/cli), the official GitLab CLI. Con
 sbx secret set-custom -g --host <GITLAB_HOST> --env GITLAB_TOKEN
 ```
 
-### 2. (Optional) Set a custom GitLab host
-
-```bash
-export GITLAB_HOST=gitlab.example.com
-```
-
-### 3. Apply the mixin
+### 2. Apply the mixin
 
 ```bash
 sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=gitlab-cli" ~/my-project
 ```
 
 `glab` is available immediately — for example `glab issue list` or `glab mr create`.
+
+## GitLab host detection
+
+On each sandbox start, if the workspace is a Git repository with a remote named `origin` pointing to a self-managed GitLab instance, `GITLAB_HOST` is set automatically. No action is required.
+
+If detection is not possible — for example because the workspace is not a Git repository, has no `origin` remote, or the origin is on a different host than the GitLab instance you want to use — set `GITLAB_HOST` permanently by appending it to `/etc/sandbox-persistent.sh`:
+
+```bash
+sbx exec <sandbox> -- bash -c "echo 'export GITLAB_HOST=git.example.com' >> /etc/sandbox-persistent.sh"
+```
+
+This persists across sandbox restarts and takes precedence over auto-detection.

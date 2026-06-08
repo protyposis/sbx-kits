@@ -3,14 +3,6 @@ kind: mixin
 name: gitlab-cli
 version: "1"
 
-environment:
-  variables:
-    GITLAB_HOST: "gitlab.com"
-    # Override to target a self-managed/Dedicated instance, e.g.:
-    #   GITLAB_HOST: "git.example.com"
-    # Register the matching token with:
-    #   sbx secret set-custom -g --host <GITLAB_HOST> --env GITLAB_TOKEN
-
 commands:
   install:
     - command: |
@@ -24,10 +16,63 @@ commands:
       user: "1000"
       description: Install Homebrew (if absent) and glab GitLab CLI
 
+  startup:
+    - command:
+        - sh
+        - -c
+        - |
+          set -eu
+
+          # Respect manual override in sandbox-persistent.sh
+          if grep -q 'GITLAB_HOST' /etc/sandbox-persistent.sh 2>/dev/null; then
+            exit 0
+          fi
+
+          # Get workspace path written at init time
+          workdir=$(cat /home/agent/.config/gitlab-cli/workdir 2>/dev/null || true)
+          [ -z "$workdir" ] && exit 0
+
+          # Require git
+          command -v git >/dev/null 2>&1 || exit 0
+
+          # Require a git repository at the workspace root
+          git -C "$workdir" rev-parse --git-dir >/dev/null 2>&1 || exit 0
+
+          # Require an origin remote
+          origin_url=$(git -C "$workdir" remote get-url origin 2>/dev/null || true)
+          [ -z "$origin_url" ] && exit 0
+
+          # Extract the hostname from the URL
+          # Handles: git@host:path  https://[user@]host[:port]/path  ssh://[user@]host[:port]/path
+          host=""
+          case "$origin_url" in
+            git@*:*)
+              host=$(printf '%s\n' "$origin_url" | sed 's/^git@//; s/:.*//')
+              ;;
+            *://*)
+              host=$(printf '%s\n' "$origin_url" | sed 's|^[^/]*://||; s|^[^@]*@||; s|[/:?#].*||')
+              ;;
+          esac
+
+          # Skip if it resolves to the default
+          [ "$host" = "gitlab.com" ] && exit 0
+
+          # Write the detected host for login shells
+          printf "export GITLAB_HOST='%s'\n" "$host" > /etc/profile.d/gitlab-host.sh
+          echo "gitlab-cli: GITLAB_HOST set to $host (detected from git origin)" >&2
+      user: "0"
+      description: Auto-detect GitLab host from workspace git origin
+
+  initFiles:
+    - path: /home/agent/.config/gitlab-cli/workdir
+      content: "${WORKDIR}"
+
 memory: |
   GitLab CLI (glab) is installed via Homebrew.
-  GITLAB_HOST sets the default GitLab instance host.
+  GITLAB_HOST sets the default GitLab instance host. When the workspace is a Git
+  repository with a self-managed GitLab origin, GITLAB_HOST is auto-detected on
+  each sandbox start.
   GITLAB_TOKEN is injected via a custom secret (sbx secret set-custom). The sandbox
   sees a placeholder which gets replaced by a proxy on the host.
 
-  Use this CLI to manage GitLab resources from the command line, e.g. cloning, MRs, reviews, pipelines.    
+  Use this CLI to manage GitLab resources from the command line, e.g. cloning, MRs, reviews, pipelines.

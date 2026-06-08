@@ -47,7 +47,6 @@ sbx run copilot \
   --kit "git+https://github.com/protyposis/sbx-kits.git#dir=traffic-inspection-ca" \
   --kit "git+https://github.com/protyposis/sbx-kits.git#dir=github-copilot-enterprise-auth" \
   --kit "git+https://github.com/protyposis/sbx-kits.git#dir=gitlab-cli" \
-  --env "GITLAB_HOST=$GITLAB_HOST" \
   ~/my-project
 ```
 
