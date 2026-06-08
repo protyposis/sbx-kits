@@ -1,0 +1,33 @@
+schemaVersion: "2"
+kind: mixin
+name: gitlab-cli
+version: "1"
+
+environment:
+  variables:
+    GITLAB_HOST: "gitlab.com"
+    # Override to target a self-managed/Dedicated instance, e.g.:
+    #   GITLAB_HOST: "git.example.com"
+    # Register the matching token with:
+    #   sbx secret set-custom -g --host <GITLAB_HOST> --env GITLAB_TOKEN
+
+commands:
+  install:
+    - command: |
+        set -eu
+        if ! command -v brew >/dev/null 2>&1; then
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.profile"
+        fi
+        brew install glab
+      user: "1000"
+      description: Install Homebrew (if absent) and glab GitLab CLI
+
+memory: |
+  GitLab CLI (glab) is installed via Homebrew.
+  GITLAB_HOST sets the default GitLab instance host.
+  GITLAB_TOKEN is injected via a custom secret (sbx secret set-custom). The sandbox
+  sees a placeholder which gets replaced by a proxy on the host.
+
+  Use this CLI to manage GitLab resources from the command line, e.g. cloning, MRs, reviews, pipelines.    
