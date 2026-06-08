@@ -24,12 +24,6 @@ sbx run opencode-openchamber --kit "git+https://github.com/protyposis/sbx-kits.g
 sbx ports <sandbox-name> --publish 3000:3000
 ```
 
-### Oh My OpenAgent (mixin)
-
-```bash
-sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-omo" ~/my-project
-```
-
 ### OpenCode Go authentication (mixin)
 
 ```bash
@@ -39,18 +33,26 @@ sbx secret set -g opencode-go
 sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-go-auth" ~/my-project
 ```
 
-### Composing kits
+### Copilot on a corporate network with GitLab (mixin)
 
-Kits can be stacked with multiple `--kit` flags:
+For environments with TLS traffic inspection (e.g., ZScaler), GitHub Copilot
+Enterprise accounts, and GitLab access:
 
 ```bash
-sbx secret set -g opencode-go
+# Register the GitLab token once on the host (replace with your GitLab host)
+GITLAB_HOST=gitlab.mycompany.com
+sbx secret set-custom -g --host "$GITLAB_HOST" --env GITLAB_TOKEN
 
-sbx run opencode \
-  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-go-auth" \
-  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-omo" \
+sbx run copilot \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=traffic-inspection-ca" \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=github-copilot-enterprise-auth" \
+  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=gitlab-cli" \
+  --env "GITLAB_HOST=$GITLAB_HOST" \
   ~/my-project
 ```
+
+Load `traffic-inspection-ca` first so the CA is trusted before the other kits
+make outbound connections during install.
 
 ## Troubleshooting
 
