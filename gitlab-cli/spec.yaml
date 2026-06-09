@@ -81,14 +81,18 @@ commands:
         exec /home/linuxbrew/.linuxbrew/bin/glab "$@"
 
 memory: |
-  GitLab CLI (glab) is installed via Homebrew. A shim at ~/.local/bin/glab
-  sources the detected host before delegating to the real binary.
-  GITLAB_HOST sets the default GitLab instance host. When the workspace is a Git
-  repository with a self-managed GitLab origin, GITLAB_HOST is auto-detected on
-  each sandbox start and written to ~/.config/gitlab-cli/gitlab-host.sh.
-  To manually set the host, write `export GITLAB_HOST='<host>'` to
-  ~/.config/gitlab-cli/gitlab-host.sh.
-  GITLAB_TOKEN is injected via a custom secret (sbx secret set-custom). The sandbox
-  sees a placeholder which gets replaced by a proxy on the host.
+  GitLab CLI (`glab` command) is installed via Homebrew (`brew` command).
+  Use `glab` for all GitLab operations, e.g. cloning, MRs, reviews, pipelines.
+  
+  The sandbox proxy handles GitLab authentication automatically by injecting credentials for CLI and HTTPS
+  Git operations. You do not need to run `glab auth login` or configure Git credentials inside the
+  sandbox — the proxy takes care of it transparently.
+  Important: `glab auth status` will show "not logged in" inside the sandbox. This is expected and
+  does not mean Git operations will fail. The proxy injects credentials at the network level,
+  independently of the `glab` CLI auth state.
 
-  Use this CLI to manage GitLab resources from the command line, e.g. cloning, MRs, reviews, pipelines.
+  `glab` also requires the GITLAB_HOST environment variable to determine which GitLab
+  instance to target. The host is auto-detected from the workspace git origin URL (if it's a Git repo),
+  and can be manually overridden by writing `export GITLAB_HOST='<host>'` to ~/.config/gitlab-cli/gitlab-host.sh.
+  Important: The `glab` command on PATH is a shim for the real binary and sources the detected host before
+  delegating. Do not set GITLAB_HOST in the sandbox environment variables, it's set automatically for each `glab` invocation.
