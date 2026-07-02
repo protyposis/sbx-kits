@@ -4,10 +4,10 @@ name: gitlab-cli
 version: "1"
 displayName: GitLab CLI
 description: >
-  Provides the GitLab CLI (`glab` command) with environment variable-based token
-  authentication (GITLAB_TOKEN and optionally GITLAB_HOST). Use the exit code of
-  `glab api user >/dev/null` to check if the CLI is authenticated (`glab auth status`
-  does not work with env tokens).
+  Provides the GitLab CLI (`glab` command) with envar-based token auth (GITLAB_TOKEN
+  and optionally GITLAB_HOST). Use the exit code of `glab api user >/dev/null` to
+  check if the CLI is authenticated (`glab auth status` does not work with env tokens).
+  Use `glab` for MRs, reviews, pipelines, and other GitLab operations.
 
 commands:
   install:
