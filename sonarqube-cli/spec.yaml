@@ -1,0 +1,44 @@
+schemaVersion: "2"
+kind: mixin
+name: sonarqube-cli
+version: "1"
+displayName: SonarQube CLI
+description: >
+  Installs the SonarQube CLI (`sonar` command) from SonarSource. Requires
+  SONARQUBE_CLI_TOKEN and either SONARQUBE_CLI_SERVER (self-hosted SonarQube Server)
+  or SONARQUBE_CLI_ORG (SonarQube Cloud) as environment variables.
+  Use this to access code quality issues and other metrics, e.g., when CI Sonar jobs fail,
+  or scan for secrets locally.
+
+environment:
+  variables:
+    DO_NOT_TRACK: "1"
+
+commands:
+  install:
+    - command: |
+        set -eu
+        curl -o- https://raw.githubusercontent.com/SonarSource/sonarqube-cli/refs/heads/master/user-scripts/install.sh | bash
+      user: "1000"
+      description: Install SonarQube CLI via official install script
+    - command: |
+        set -eu
+        mkdir -p /home/agent/.local/bin
+        ln -sf "$HOME/.local/share/sonarqube-cli/bin/sonar" /home/agent/.local/bin/sonar
+      user: "1000"
+      description: Symlink sonar binary to a directory on PATH
+
+memory: |
+  The SonarQube CLI (`sonar` command) is installed. It communicates with a
+  SonarQube Cloud or self-hosted SonarQube Server instance.
+
+  Authentication is via environment variables (set via `sbx secret set-custom` or `sbx run --env`):
+  - SONARQUBE_CLI_TOKEN: user token (required)
+  - SONARQUBE_CLI_SERVER: server URL (required for self-hosted)
+  - SONARQUBE_CLI_ORG: organization key (required for SonarQube Cloud only)
+
+  Common commands:
+  - `sonar auth status` — check authentication
+  - `sonar list projects` — list accessible projects
+  - `sonar list issues --project <key>` — list issues for a project
+  - `sonar analyze secrets <path>` — scan for secrets locally (no auth needed)

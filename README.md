@@ -10,6 +10,7 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 | [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
 | [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
 | [`opencode-openchamber/`](./opencode-openchamber/) | sandbox | OpenCode TUI + OpenChamber web UI side-car |
+| [`sonarqube-cli/`](./sonarqube-cli/) | mixin | SonarQube CLI (`sonar`) with env-var-based token authentication for Cloud and self-hosted |
 | [`traffic-inspection-ca/`](./traffic-inspection-ca/) | mixin | Install corporate CA certificate for TLS inspection (e.g., ZScaler) |
 
 ## Quick start
