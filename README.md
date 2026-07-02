@@ -8,7 +8,6 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 |---|---|---|
 | [`github-copilot-enterprise-auth/`](./github-copilot-enterprise-auth/) | mixin | Extend built-in GitHub token auth to Copilot Enterprise endpoints |
 | [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
-| [`opencode-go-auth/`](./opencode-go-auth/) | mixin | Proxy-managed OpenCode Go API key injection |
 | [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
 | [`opencode-openchamber/`](./opencode-openchamber/) | sandbox | OpenCode TUI + OpenChamber web UI side-car |
 | [`traffic-inspection-ca/`](./traffic-inspection-ca/) | mixin | Install corporate CA certificate for TLS inspection (e.g., ZScaler) |
@@ -22,15 +21,6 @@ sbx run opencode-openchamber --kit "git+https://github.com/protyposis/sbx-kits.g
 
 # Expose the OpenChamber web UI in a browser
 sbx ports <sandbox-name> --publish 3000:3000
-```
-
-### OpenCode Go authentication (mixin)
-
-```bash
-# Store your API key once on the host
-sbx secret set -g opencode-go
-
-sbx run opencode --kit "git+https://github.com/protyposis/sbx-kits.git#dir=opencode-go-auth" ~/my-project
 ```
 
 ### Copilot on a corporate network with GitLab (mixin)
