@@ -37,4 +37,4 @@ If detection is not possible — for example because the workspace is not a Git 
 sbx exec <sandbox> -- bash -c "echo 'export GITLAB_HOST=git.example.com' >> /etc/sandbox-persistent.sh"
 ```
 
-This persists across sandbox restarts and takes precedence over auto-detection.
+This persists across sandbox restarts. The kit respects any `GITLAB_HOST` already present in `/etc/sandbox-persistent.sh` and skips auto-detection, so set it before starting the sandbox to take precedence.

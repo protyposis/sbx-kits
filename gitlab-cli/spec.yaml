@@ -26,6 +26,12 @@ commands:
         brew install glab
       user: "1000"
       description: Install GitLab CLI
+    - command: |
+        set -eu
+        touch /etc/sandbox-persistent.sh
+        grep -q '/home/linuxbrew/.linuxbrew/bin/brew shellenv' /etc/sandbox-persistent.sh 2>/dev/null \
+          || printf 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"\n' >> /etc/sandbox-persistent.sh
+      description: Add Homebrew (and glab) to PATH via /etc/sandbox-persistent.sh
 
   startup:
     - command:
@@ -34,8 +40,8 @@ commands:
         - |
           set -eu
 
-          # Respect manual override in gitlab-host.sh
-          if grep -q 'GITLAB_HOST' /home/agent/.config/gitlab-cli/gitlab-host.sh 2>/dev/null; then
+          # Respect manual override already present in sandbox-persistent.sh
+          if grep -q 'GITLAB_HOST' /etc/sandbox-persistent.sh 2>/dev/null; then
             exit 0
           fi
 
@@ -68,23 +74,14 @@ commands:
           # Skip if it resolves to the default
           [ "$host" = "gitlab.com" ] && exit 0
 
-          # Write the detected host for the glab shim
-          printf "export GITLAB_HOST='%s'\n" "$host" > /home/agent/.config/gitlab-cli/gitlab-host.sh
+          # Write the detected host so glab picks it up from the environment
+          printf "export GITLAB_HOST='%s'\n" "$host" >> /etc/sandbox-persistent.sh
           echo "gitlab-cli: GITLAB_HOST set to $host (detected from git origin)" >&2
-      user: "1000"
       description: Auto-detect GitLab host from workspace git origin
 
   initFiles:
     - path: /home/agent/.config/gitlab-cli/workdir
       content: "${WORKDIR}"
-    - path: /home/agent/.local/bin/glab
-      mode: "0755"
-      content: |
-        #!/bin/sh
-        if [ -z "$GITLAB_HOST" ] && [ -f "/home/agent/.config/gitlab-cli/gitlab-host.sh" ]; then
-          . /home/agent/.config/gitlab-cli/gitlab-host.sh
-        fi
-        exec /home/linuxbrew/.linuxbrew/bin/glab "$@"
 
 memory: |
   GitLab CLI (`glab` command) is installed via Homebrew (`brew` command).
@@ -99,6 +96,6 @@ memory: |
 
   `glab` also requires the GITLAB_HOST environment variable to determine which GitLab
   instance to target. The host is auto-detected from the workspace git origin URL (if it's a Git repo),
-  and can be manually overridden by writing `export GITLAB_HOST='<host>'` to ~/.config/gitlab-cli/gitlab-host.sh.
-  Important: The `glab` command on PATH is a shim for the real binary and sources the detected host before
-  delegating. Do not set GITLAB_HOST in the sandbox environment variables, it's set automatically for each `glab` invocation.
+  and written to /etc/sandbox-persistent.sh so it persists across restarts. To override, append
+  `export GITLAB_HOST='<host>'` to /etc/sandbox-persistent.sh before starting the sandbox (or via
+  `sbx exec`) — the kit respects any GITLAB_HOST already present and skips auto-detection.
