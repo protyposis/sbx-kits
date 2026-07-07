@@ -1,0 +1,45 @@
+schemaVersion: "2"
+kind: mixin
+name: jira-cli
+version: "1"
+displayName: Jira CLI
+description: >
+  Installs jira-cli (`jira` command) from source via Go and exposes it on PATH.
+  Uses bearer auth with a Jira API token (JIRA_API_TOKEN) for Jira Data Center
+  or self-hosted Jira. Run `jira init --installation local --server <host>
+  --auth-type bearer --login <user>` once inside the sandbox, then use `jira`
+  for issues, sprints, and boards.
+
+environment:
+  variables:
+    JIRA_AUTH_TYPE: "bearer"
+
+commands:
+  install:
+    - command: |
+        set -eu
+        go install github.com/ankitpokhrel/jira-cli/cmd/jira@79067e2422df10e59f310bd6fd4979f43a1df0e7
+      user: "1000"
+      description: Install jira-cli via `go install`
+    - command: |
+        set -eu
+        touch /etc/sandbox-persistent.sh
+        go_bin="$(go env GOPATH)/bin"
+        grep -q "$go_bin" /etc/sandbox-persistent.sh 2>/dev/null \
+          || printf 'export PATH="$PATH:%s"\n' "$go_bin" >> /etc/sandbox-persistent.sh
+      user: "1000"
+      description: Add jira binary directory to PATH via /etc/sandbox-persistent.sh
+
+memory: |
+  jira-cli (`jira` command) is installed via `go install` and is on PATH.
+  Authentication uses a Jira API token with bearer auth (JIRA_AUTH_TYPE=bearer,
+  JIRA_API_TOKEN injected by the proxy from a custom secret bound to your Jira host).
+
+  On first use in a fresh sandbox, run once to write the local config:
+    jira init --installation local --server <yourjirahost> --auth-type bearer --login <yourjirauser>
+
+  Then use jira normally, e.g.:
+    jira issue list
+    jira sprint list
+    jira issue view <ISSUE-KEY>
+    jira issue create

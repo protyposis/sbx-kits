@@ -8,6 +8,7 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 |---|---|---|
 | [`github-copilot-enterprise-auth/`](./github-copilot-enterprise-auth/) | mixin | Extend built-in GitHub token auth to Copilot Enterprise endpoints |
 | [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
+| [`jira-cli/`](./jira-cli/) | mixin | jira-cli (`jira` command) built via Go with bearer API token auth for Jira Data Center / self-hosted |
 | [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
 | [`opencode-openchamber/`](./opencode-openchamber/) | sandbox | OpenCode TUI + OpenChamber web UI side-car |
 | [`sonarqube-cli/`](./sonarqube-cli/) | mixin | SonarQube CLI (`sonar`) with env-var-based token authentication for Cloud and self-hosted |
