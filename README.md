@@ -6,7 +6,6 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 
 | Directory | Kind | Purpose |
 |---|---|---|
-| [`github-copilot-enterprise-auth/`](./github-copilot-enterprise-auth/) | mixin | Extend built-in GitHub token auth to Copilot Enterprise endpoints |
 | [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
 | [`jira-cli/`](./jira-cli/) | mixin | jira-cli (`jira` command) built via Go with bearer API token auth for Jira Data Center / self-hosted |
 | [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
@@ -27,8 +26,7 @@ sbx ports <sandbox-name> --publish 3000:3000
 
 ### Copilot on a corporate network with GitLab (mixin)
 
-For environments with TLS traffic inspection (e.g., ZScaler), GitHub Copilot
-Enterprise accounts, and GitLab access:
+For environments with TLS traffic inspection (e.g., ZScaler) and GitLab access:
 
 ```bash
 # Register the GitLab token once on the host (replace with your GitLab host)
@@ -36,7 +34,6 @@ sbx secret set-custom -g --host "gitlab.mycompany.com" --env GITLAB_TOKEN
 
 sbx run copilot \
   --kit "git+https://github.com/protyposis/sbx-kits.git#dir=traffic-inspection-ca" \
-  --kit "git+https://github.com/protyposis/sbx-kits.git#dir=github-copilot-enterprise-auth" \
   --kit "git+https://github.com/protyposis/sbx-kits.git#dir=gitlab-cli" \
   ~/my-project
 ```
