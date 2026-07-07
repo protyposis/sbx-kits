@@ -1,0 +1,34 @@
+schemaVersion: "2"
+kind: mixin
+name: apm
+version: "1"
+displayName: Agent Package Manager
+description: >
+  Installs the Microsoft Agent Package Manager (apm) CLI. APM manages AI agent
+  context dependencies — skills, prompts, instructions, plugins, and MCP servers —
+  declared in an apm.yml file.
+
+network:
+  allowedDomains:
+    - aka.ms
+    - github.com
+    - api.github.com
+    - pypi.org
+    - files.pythonhosted.org
+
+commands:
+  install:
+    - command: |
+        set -eu
+        curl -sSL https://aka.ms/apm-unix | APM_INSTALL_DIR=/home/agent/.local/bin sh
+      user: "1000"
+      description: Install APM CLI
+
+memory: |
+  APM (Agent Package Manager) is installed. Use `apm` to manage agent context
+  dependencies declared in `apm.yml`.
+
+  Common commands:
+  - `apm init <name>` — create a new APM project
+  - `apm install` — install dependencies from apm.yml
+  - `apm run` — run a prompt

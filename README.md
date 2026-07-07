@@ -6,6 +6,7 @@ A collection of [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) [kits](h
 
 | Directory | Kind | Purpose |
 |---|---|---|
+| [`apm/`](./apm/) | mixin | Microsoft Agent Package Manager (apm) CLI for managing agent context dependencies |
 | [`gitlab-cli/`](./gitlab-cli/) | mixin | GitLab CLI (glab) with proxy-managed token |
 | [`jira-cli/`](./jira-cli/) | mixin | jira-cli (`jira` command) built via Go with bearer API token auth for Jira Data Center / self-hosted |
 | [`opencode-omo/`](./opencode-omo/) | mixin | Oh My OpenAgent with OpenAI and OpenCode Go providers |
