@@ -14,14 +14,27 @@ commands:
             curl -fsSL https://bun.sh/install | bash
           fi
         fi
-        echo 'export BUN_INSTALL="$HOME/.bun"' >> "$HOME/.profile"
-        echo 'export PATH="$HOME/.bun/bin:$PATH"' >> "$HOME/.profile"
       user: "1000"
       description: Install Bun for bunx-based Oh My OpenAgent installer
     - command: |
         set -eu
-        export BUN_INSTALL="$HOME/.bun"
-        export PATH="$HOME/.bun/bin:$PATH"
+        mkdir -p "$HOME/.local/bin"
+        if [ -x "$HOME/.bun/bin/bun" ]; then
+          bun_bin="$HOME/.bun/bin/bun"
+          bunx_bin="$HOME/.bun/bin/bunx"
+        elif command -v bun >/dev/null 2>&1; then
+          bun_bin=$(command -v bun)
+          bunx_bin="${bun_bin%/*}/bunx"
+        else
+          echo "opencode-omo: bun not found after install" >&2
+          exit 1
+        fi
+        ln -sf "$bun_bin" "$HOME/.local/bin/bun"
+        ln -sf "$bunx_bin" "$HOME/.local/bin/bunx"
+      user: "1000"
+      description: Symlink bun and bunx to a directory on PATH
+    - command: |
+        set -eu
         bunx oh-my-openagent install \
           --no-tui \
           --platform=opencode \

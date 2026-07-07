@@ -34,6 +34,12 @@ commands:
         command -v openchamber >/dev/null 2>&1 || npm install -g @openchamber/web
       user: "1000"
       description: Install OpenChamber web CLI
+    - command: |
+        set -eu
+        mkdir -p /home/agent/.local/bin
+        ln -sf "$(npm prefix -g)/bin/openchamber" /home/agent/.local/bin/openchamber
+      user: "1000"
+      description: Symlink openchamber binary to a directory on PATH
 
 memory: |
   This sandbox serves OpenChamber as OpenCode Web UI.

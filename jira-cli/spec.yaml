@@ -23,12 +23,10 @@ commands:
       description: Install jira-cli via `go install`
     - command: |
         set -eu
-        touch /etc/sandbox-persistent.sh
-        go_bin="$(go env GOPATH)/bin"
-        grep -q "$go_bin" /etc/sandbox-persistent.sh 2>/dev/null \
-          || printf 'export PATH="$PATH:%s"\n' "$go_bin" >> /etc/sandbox-persistent.sh
+        mkdir -p /home/agent/.local/bin
+        ln -sf "$(go env GOPATH)/bin/jira" /home/agent/.local/bin/jira
       user: "1000"
-      description: Add jira binary directory to PATH via /etc/sandbox-persistent.sh
+      description: Symlink jira binary to a directory on PATH
 
 memory: |
   jira-cli (`jira` command) is installed via `go install` and is on PATH.

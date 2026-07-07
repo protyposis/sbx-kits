@@ -4,10 +4,10 @@ name: gitlab-cli
 version: "1"
 displayName: GitLab CLI
 description: >
-  Provides the GitLab CLI (`glab` command) with envar-based token auth (GITLAB_TOKEN
-  and optionally GITLAB_HOST). Use the exit code of `glab api user >/dev/null` to
-  check if the CLI is authenticated (`glab auth status` does not work with env tokens).
-  Use `glab` for MRs, reviews, pipelines, and other GitLab operations.
+  Provides the GitLab CLI (`glab` command) with envar-based token auth (GITLAB_TOKEN).
+  Use the exit code of `glab api user >/dev/null` to check if the CLI is authenticated
+  (`glab auth status` does not work with env tokens). Use `glab` for MRs, reviews,
+  pipelines, and other GitLab operations.
 
 commands:
   install:
@@ -15,23 +15,21 @@ commands:
         set -eu
         if ! command -v brew >/dev/null 2>&1; then
           NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.profile"
         fi
       user: "1000"
       description: Install Homebrew (if absent)
     - command: |
         set -eu
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        brew install glab
+        /home/linuxbrew/.linuxbrew/bin/brew install glab
       user: "1000"
       description: Install GitLab CLI
     - command: |
         set -eu
-        touch /etc/sandbox-persistent.sh
-        grep -q '/home/linuxbrew/.linuxbrew/bin/brew shellenv' /etc/sandbox-persistent.sh 2>/dev/null \
-          || printf 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"\n' >> /etc/sandbox-persistent.sh
-      description: Add Homebrew (and glab) to PATH via /etc/sandbox-persistent.sh
+        mkdir -p /home/agent/.local/bin
+        ln -sf /home/linuxbrew/.linuxbrew/bin/brew /home/agent/.local/bin/brew
+        ln -sf /home/linuxbrew/.linuxbrew/bin/glab /home/agent/.local/bin/glab
+      user: "1000"
+      description: Symlink brew and glab to a directory on PATH
 
   startup:
     - command:
@@ -40,10 +38,9 @@ commands:
         - |
           set -eu
 
-          # Respect manual override already present in sandbox-persistent.sh
-          if grep -q 'GITLAB_HOST' /etc/sandbox-persistent.sh 2>/dev/null; then
-            exit 0
-          fi
+          # Respect manual override already present in glab config
+          configured_host=$(/home/linuxbrew/.linuxbrew/bin/glab config get host --global 2>/dev/null || true)
+          [ -n "$configured_host" ] && exit 0
 
           # Get workspace path written at init time
           workdir=$(cat /home/agent/.config/gitlab-cli/workdir 2>/dev/null || true)
@@ -74,9 +71,9 @@ commands:
           # Skip if it resolves to the default
           [ "$host" = "gitlab.com" ] && exit 0
 
-          # Write the detected host so glab picks it up from the environment
-          printf "export GITLAB_HOST='%s'\n" "$host" >> /etc/sandbox-persistent.sh
-          echo "gitlab-cli: GITLAB_HOST set to $host (detected from git origin)" >&2
+          # Persist the detected host in glab's global config
+          /home/linuxbrew/.linuxbrew/bin/glab config set host "https://$host" --global
+          echo "gitlab-cli: host set to https://$host (detected from git origin)" >&2
       description: Auto-detect GitLab host from workspace git origin
 
   initFiles:
@@ -94,8 +91,8 @@ memory: |
   does not mean Git operations will fail. The proxy injects credentials at the network level,
   independently of the `glab` CLI auth state.
 
-  `glab` also requires the GITLAB_HOST environment variable to determine which GitLab
-  instance to target. The host is auto-detected from the workspace git origin URL (if it's a Git repo),
-  and written to /etc/sandbox-persistent.sh so it persists across restarts. To override, append
-  `export GITLAB_HOST='<host>'` to /etc/sandbox-persistent.sh before starting the sandbox (or via
-  `sbx exec`) — the kit respects any GITLAB_HOST already present and skips auto-detection.
+  `glab` also requires the host to be configured to determine which GitLab instance to target.
+  The host is auto-detected from the workspace git origin URL (if it's a Git repo) and persisted in
+  glab's global config. To override, run `glab config set host https://git.example.com --global`
+  inside the sandbox (or via `sbx exec`) — the kit respects any host already present in glab config
+  and skips auto-detection.
