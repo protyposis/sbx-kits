@@ -3,6 +3,11 @@ kind: mixin
 name: opencode-omo
 version: "1"
 
+environment:
+  variables:
+    OMO_DISABLE_POSTHOG: "1"
+    OMO_SEND_ANONYMOUS_TELEMETRY: "0"
+
 commands:
   install:
     - command: |
