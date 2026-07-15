@@ -55,6 +55,22 @@ commands:
           --skip-auth
       user: "1000"
       description: Install Oh My OpenAgent for OpenCode with OpenAI and OpenCode Go enabled
+    - command: |
+        set -eu
+        config_path="$HOME/.config/opencode/oh-my-openagent.json"
+
+        mkdir -p "$(dirname "$config_path")"
+        [ -f "$config_path" ] || printf '{}\n' > "$config_path"
+
+        node -e '
+          const fs = require("node:fs")
+          const path = process.argv[1]
+          const cfg = JSON.parse(fs.readFileSync(path, "utf8") || "{}")
+          cfg.git_master = { ...(cfg.git_master || {}), commit_footer: false, include_co_authored_by: false }
+          fs.writeFileSync(path, JSON.stringify(cfg, null, 2) + "\n", "utf8")
+        ' "$config_path"
+      user: "1000"
+      description: Set git_master commit footer and co-author flags to false in OMO config
 
 memory: |
   Oh My OpenAgent is installed and configured for OpenCode with OpenAI/ChatGPT and OpenCode Go providers enabled.
