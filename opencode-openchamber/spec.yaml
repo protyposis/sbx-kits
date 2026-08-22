@@ -20,6 +20,12 @@ environment:
     OPENCHAMBER_OPENCODE_PORT: "4096"
     OPENCHAMBER_ALLOW_UNAUTHENTICATED_LAN: true
 
+network:
+  publishedPorts:
+    - container: 3000
+      protocol: tcp
+      name: openchamber
+
 commands:
   install:
     - command: |
