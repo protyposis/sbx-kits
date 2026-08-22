@@ -9,7 +9,7 @@ description: >
   (`glab auth status` does not work with env tokens). Use `glab` for MRs, reviews,
   pipelines, and other GitLab operations.
 
-commands:
+setup:
   install:
     - command: |
         set -eu
@@ -76,23 +76,24 @@ commands:
           echo "gitlab-cli: host set to https://$host (detected from git origin)" >&2
       description: Auto-detect GitLab host from workspace git origin
 
-  initFiles:
+  files:
     - path: /home/agent/.config/gitlab-cli/workdir
       content: "${WORKDIR}"
 
-memory: |
-  GitLab CLI (`glab` command) is installed via Homebrew (`brew` command).
-  Use `glab` for all GitLab operations, e.g. cloning, MRs, reviews, pipelines.
-  
-  The sandbox proxy handles GitLab authentication automatically by injecting credentials for CLI and HTTPS
-  Git operations. You do not need to run `glab auth login` or configure Git credentials inside the
-  sandbox — the proxy takes care of it transparently.
-  Important: `glab auth status` will show "not logged in" inside the sandbox. This is expected and
-  does not mean Git operations will fail. The proxy injects credentials at the network level,
-  independently of the `glab` CLI auth state.
+agentInstructions:
+  content: |
+    GitLab CLI (`glab` command) is installed via Homebrew (`brew` command).
+    Use `glab` for all GitLab operations, e.g. cloning, MRs, reviews, pipelines.
 
-  `glab` also requires the host to be configured to determine which GitLab instance to target.
-  The host is auto-detected from the workspace git origin URL (if it's a Git repo) and persisted in
-  glab's global config. To override, run `glab config set host https://git.example.com --global`
-  inside the sandbox (or via `sbx exec`) — the kit respects any host already present in glab config
-  and skips auto-detection.
+    The sandbox proxy handles GitLab authentication automatically by injecting credentials for CLI and HTTPS
+    Git operations. You do not need to run `glab auth login` or configure Git credentials inside the
+    sandbox — the proxy takes care of it transparently.
+    Important: `glab auth status` will show "not logged in" inside the sandbox. This is expected and
+    does not mean Git operations will fail. The proxy injects credentials at the network level,
+    independently of the `glab` CLI auth state.
+
+    `glab` also requires the host to be configured to determine which GitLab instance to target.
+    The host is auto-detected from the workspace git origin URL (if it's a Git repo) and persisted in
+    glab's global config. To override, run `glab config set host https://git.example.com --global`
+    inside the sandbox (or via `sbx exec`) — the kit respects any host already present in glab config
+    and skips auto-detection.

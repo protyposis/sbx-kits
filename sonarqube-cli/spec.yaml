@@ -14,7 +14,7 @@ environment:
   variables:
     DO_NOT_TRACK: "1"
 
-commands:
+setup:
   install:
     - command: |
         set -eu
@@ -28,17 +28,18 @@ commands:
       user: "1000"
       description: Symlink sonar binary to a directory on PATH
 
-memory: |
-  The SonarQube CLI (`sonar` command) is installed. It communicates with a
-  SonarQube Cloud or self-hosted SonarQube Server instance.
+agentInstructions:
+  content: |
+    The SonarQube CLI (`sonar` command) is installed. It communicates with a
+    SonarQube Cloud or self-hosted SonarQube Server instance.
 
-  Authentication is via environment variables (set via `sbx secret set-custom` or `sbx run --env`):
-  - SONARQUBE_CLI_TOKEN: user token (required)
-  - SONARQUBE_CLI_SERVER: server URL (required for self-hosted)
-  - SONARQUBE_CLI_ORG: organization key (required for SonarQube Cloud only)
+    Authentication is via environment variables (set via `sbx secret set-custom` or `sbx run --env`):
+    - SONARQUBE_CLI_TOKEN: user token (required)
+    - SONARQUBE_CLI_SERVER: server URL (required for self-hosted)
+    - SONARQUBE_CLI_ORG: organization key (required for SonarQube Cloud only)
 
-  Common commands:
-  - `sonar auth status` — check authentication
-  - `sonar list projects` — list accessible projects
-  - `sonar list issues --project <key>` — list issues for a project
-  - `sonar analyze secrets <path>` — scan for secrets locally (no auth needed)
+    Common commands:
+    - `sonar auth status` — check authentication
+    - `sonar list projects` — list accessible projects
+    - `sonar list issues --project <key>` — list issues for a project
+    - `sonar analyze secrets <path>` — scan for secrets locally (no auth needed)

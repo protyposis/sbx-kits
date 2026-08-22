@@ -5,9 +5,16 @@ version: "3"
 
 sandbox:
   image: "docker/sandbox-templates:opencode-docker"
-  aiFilename: AGENTS.md
-  entrypoint:
-    run: ["bash", "/home/agent/bin/start-opencode-openchamber"]
+  entrypoint: ["bash", "/home/agent/bin/start-opencode-openchamber"]
+
+agentInstructions:
+  filename: AGENTS.md
+  content: |
+    This sandbox serves OpenChamber as OpenCode Web UI.
+
+    Runtime ports:
+    - OpenCode TUI/server: http://127.0.0.1:4096
+    - OpenChamber web UI: http://127.0.0.1:3000, LAN-bound by OpenChamber via --lan
 
 environment:
   variables:
@@ -20,13 +27,12 @@ environment:
     OPENCHAMBER_OPENCODE_PORT: "4096"
     OPENCHAMBER_ALLOW_UNAUTHENTICATED_LAN: true
 
-network:
-  publishedPorts:
-    - container: 3000
-      protocol: tcp
-      name: openchamber
+ports:
+  - container: 3000
+    protocol: tcp
+    name: openchamber
 
-commands:
+setup:
   install:
     - command: |
         set -eu
@@ -46,10 +52,3 @@ commands:
         ln -sf "$(npm prefix -g)/bin/openchamber" /home/agent/.local/bin/openchamber
       user: "1000"
       description: Symlink openchamber binary to a directory on PATH
-
-memory: |
-  This sandbox serves OpenChamber as OpenCode Web UI.
-
-  Runtime ports:
-  - OpenCode TUI/server: http://127.0.0.1:4096
-  - OpenChamber web UI: http://127.0.0.1:3000, LAN-bound by OpenChamber via --lan

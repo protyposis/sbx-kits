@@ -8,7 +8,7 @@ environment:
     OMO_DISABLE_POSTHOG: "1"
     OMO_SEND_ANONYMOUS_TELEMETRY: "0"
 
-commands:
+setup:
   install:
     - command: |
         set -eu
@@ -72,5 +72,6 @@ commands:
       user: "1000"
       description: Set git_master commit footer and co-author flags to false in OMO config
 
-memory: |
-  Oh My OpenAgent is installed and configured for OpenCode with OpenAI/ChatGPT and OpenCode Go providers enabled.
+agentInstructions:
+  content: |
+    Oh My OpenAgent is installed and configured for OpenCode with OpenAI/ChatGPT and OpenCode Go providers enabled.

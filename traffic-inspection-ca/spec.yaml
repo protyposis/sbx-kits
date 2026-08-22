@@ -17,7 +17,7 @@ environment:
     # HTTPS URL probed to detect TLS interception when no certificate file
     # is provided. Change this if the default URL is unreachable.
 
-commands:
+setup:
   install:
     - command: |
         set -eu
@@ -102,6 +102,7 @@ commands:
         install_pem "$TMPFILE"
       description: Install corporate CA certificate into the system trust store
 
-memory: |
-  The traffic-inspection-ca mixin is loaded. It installs a corporate CA certificate
-  to make TLS work behind an intercepting proxy such as ZScaler.
+agentInstructions:
+  content: |
+    The traffic-inspection-ca mixin is loaded. It installs a corporate CA certificate
+    to make TLS work behind an intercepting proxy such as ZScaler.

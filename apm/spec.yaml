@@ -8,15 +8,16 @@ description: >
   context dependencies — skills, prompts, instructions, plugins, and MCP servers —
   declared in an apm.yml file.
 
-network:
-  allowedDomains:
-    - aka.ms
-    - github.com
-    - api.github.com
-    - pypi.org
-    - files.pythonhosted.org
+permissions:
+  network:
+    allow:
+      - aka.ms
+      - github.com
+      - api.github.com
+      - pypi.org
+      - files.pythonhosted.org
 
-commands:
+setup:
   install:
     - command: |
         set -eu
@@ -24,11 +25,12 @@ commands:
       user: "1000"
       description: Install APM CLI
 
-memory: |
-  APM (Agent Package Manager) is installed. Use `apm` to manage agent context
-  dependencies declared in `apm.yml`.
+agentInstructions:
+  content: |
+    APM (Agent Package Manager) is installed. Use `apm` to manage agent context
+    dependencies declared in `apm.yml`.
 
-  Common commands:
-  - `apm init <name>` — create a new APM project
-  - `apm install` — install dependencies from apm.yml
-  - `apm run` — run a prompt
+    Common commands:
+    - `apm init <name>` — create a new APM project
+    - `apm install` — install dependencies from apm.yml
+    - `apm run` — run a prompt
