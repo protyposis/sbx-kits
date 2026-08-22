@@ -1,6 +1,7 @@
 schemaVersion: "2"
 kind: sandbox
 name: opencode-openchamber
+displayName: OpenChamber for OpenCode
 version: "3"
 
 sandbox:
@@ -10,7 +11,7 @@ sandbox:
 agentInstructions:
   filename: AGENTS.md
   content: |
-    This sandbox serves OpenChamber as OpenCode Web UI.
+    This sandbox serves the OpenChamber open-source AI workspace built upon OpenCode.
 
     Runtime ports:
     - OpenCode TUI/server: http://127.0.0.1:4096
@@ -40,15 +41,15 @@ setup:
           sudo apt-get update
           sudo apt-get install -y curl ca-certificates unzip jq bash git procps netcat-openbsd
         fi
-      description: Install base utilities required by OpenChamber and installers
+      description: Install requirements
     - command: |
         set -eu
         command -v openchamber >/dev/null 2>&1 || npm install -g @openchamber/web
       user: "1000"
-      description: Install OpenChamber web CLI
+      description: Install OpenChamber
     - command: |
         set -eu
         mkdir -p /home/agent/.local/bin
         ln -sf "$(npm prefix -g)/bin/openchamber" /home/agent/.local/bin/openchamber
       user: "1000"
-      description: Symlink openchamber binary to a directory on PATH
+      description: Symlink OpenChamber binary to a directory on PATH

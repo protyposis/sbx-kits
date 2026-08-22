@@ -1,6 +1,7 @@
 schemaVersion: "2"
 kind: mixin
 name: opencode-omo
+displayName: Oh My OpenAgent (OMO) for OpenCode
 version: "1"
 
 environment:
@@ -74,4 +75,5 @@ setup:
 
 agentInstructions:
   content: |
-    Oh My OpenAgent is installed and configured for OpenCode with OpenAI/ChatGPT and OpenCode Go providers enabled.
+    Oh My OpenAgent (OMO) is installed and configured for OpenCode with OpenAI/ChatGPT and OpenCode Go providers enabled.
+    To update OMO, use the same method it was originally installed with: `bunx oh-my-openagent install` with appropriate parameters. Never use another package manager, e.g., npm.
