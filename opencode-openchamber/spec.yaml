@@ -4,7 +4,7 @@ name: opencode-openchamber
 version: "3"
 
 sandbox:
-  image: "docker/sandbox-templates:opencode"
+  image: "docker/sandbox-templates:opencode-docker"
   aiFilename: AGENTS.md
   entrypoint:
     run: ["bash", "/home/agent/bin/start-opencode-openchamber"]
