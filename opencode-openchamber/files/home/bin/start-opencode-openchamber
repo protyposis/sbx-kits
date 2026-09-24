@@ -20,6 +20,7 @@ mkdir -p "$log_dir"
 
 OPENCHAMBER_PID_FILE="$log_dir/openchamber.pid"
 WAITER_PID=""
+OPENCODE_SERVICE_STARTED=0
 rm -f "$OPENCHAMBER_PID_FILE"
 
 cleanup() {
@@ -34,6 +35,10 @@ cleanup() {
       openchamber stop --port "$OPENCHAMBER_PORT" >>"$log_dir/openchamber.log" 2>&1 || true
     fi
     rm -f "$OPENCHAMBER_PID_FILE"
+  fi
+
+  if [[ "$OPENCODE_SERVICE_STARTED" == "1" ]]; then
+    opencode service stop >/dev/null 2>&1 || true
   fi
 }
 
@@ -80,6 +85,17 @@ start_openchamber_after_opencode_ready() {
   echo "OpenChamber started in the background on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
 }
 
-start_openchamber_after_opencode_ready &
-WAITER_PID=$!
-opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
+if [[ "$(opencode --version 2>/dev/null)" =~ ^opencode[[:space:]]v2\. ]]; then
+  opencode service set hostname "$OPENCODE_HOSTNAME"
+  opencode service set port "$OPENCODE_PORT"
+  opencode service start
+  OPENCODE_SERVICE_STARTED=1
+
+  export OPENCODE_SERVER_PASSWORD="$(opencode service get password)"
+  start_openchamber_after_opencode_ready
+  opencode "$@"
+else
+  start_openchamber_after_opencode_ready &
+  WAITER_PID=$!
+  opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
+fi

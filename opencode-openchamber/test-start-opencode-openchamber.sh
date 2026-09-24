@@ -61,6 +61,18 @@ cat >"$bin_dir/opencode" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--version" ]]; then
+  echo "opencode v${OPENCODE_MAJOR:-1}.0.0"
+  exit 0
+fi
+
+if [[ "${1:-}" == "service" ]]; then
+  printf '%s\n' "${*:2}" >>"$TEST_ROOT/opencode.service"
+  exit 0
+fi
+
+printf '%s\n' "$*" >>"$TEST_ROOT/opencode.tui"
+
 if [[ "${OPENCODE_TEST_MODE:-}" == "wait-for-openchamber" ]]; then
   for _ in $(seq 1 100); do
     [[ -f "$TEST_ROOT/openchamber.started" ]] && exit 0
@@ -95,6 +107,7 @@ run_launcher() {
     OPENCHAMBER_PORT=39001 \
     OPENCODE_TEST_MODE="$1" \
     NC_TEST_MODE="${2:-}" \
+    OPENCODE_MAJOR="${3:-1}" \
     bash "$launcher" &
   launcher_pid=$!
 }
@@ -118,6 +131,19 @@ wait_for_file "$test_root/openchamber.child"
 child_pid=$(cat "$test_root/openchamber.child")
 wait "$launcher_pid"
 assert_stopped "$child_pid"
+
+# OpenCode v2 uses a shared native service and attaches the TUI to it.
+rm -f "$test_root/openchamber.started" "$test_root/openchamber.child" "$test_root/opencode.service" "$test_root/opencode.tui"
+run_launcher immediate-exit '' 2
+wait_for_file "$test_root/openchamber.child"
+child_pid=$(cat "$test_root/openchamber.child")
+wait "$launcher_pid"
+assert_stopped "$child_pid"
+grep -Fx 'set hostname 127.0.0.1' "$test_root/opencode.service" >/dev/null
+grep -Fx 'set port 4096' "$test_root/opencode.service" >/dev/null
+grep -Fx 'start' "$test_root/opencode.service" >/dev/null
+grep -Fx 'stop' "$test_root/opencode.service" >/dev/null
+grep -Fx -- '--server http://127.0.0.1:4096' "$test_root/opencode.tui" >/dev/null
 
 if HOME="$test_root/home" PATH="$bin_dir:$PATH" OPENCHAMBER_PORT='3000.*' bash "$launcher" >/dev/null 2>&1; then
   echo "Expected invalid OPENCHAMBER_PORT to fail" >&2
