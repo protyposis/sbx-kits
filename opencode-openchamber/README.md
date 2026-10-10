@@ -2,13 +2,15 @@
 
 **Kind:** sandbox
 
-Runs [OpenCode](https://opencode.ai) as the primary TUI/server and starts [OpenChamber](https://github.com/openchamber/openchamber) as a background web UI once OpenCode is ready. OpenChamber binds to all LAN interfaces so it can be reached via a published host port.
+Starts [OpenChamber](https://github.com/openchamber/openchamber) first. OpenChamber launches and manages the [OpenCode](https://opencode.ai) server, and the OpenCode TUI attaches to it. Because OpenChamber owns the server, it can update and restart OpenCode without ending the session: the TUI reconnects on its own. OpenChamber binds to all LAN interfaces so it can be reached via a published host port.
+
+Sandbox setup installs the latest OpenCode v2 (OpenChamber needs 2.0.20 or newer). Quitting the TUI stops OpenChamber and OpenCode.
 
 ## Ports
 
 | Service | In-container port | Variable |
 |---|---|---|
-| OpenCode server | 4096 | `OPENCODE_PORT` |
+| OpenCode server (managed by OpenChamber) | 4096 | `OPENCODE_PORT` |
 | OpenChamber web UI | 3000 | `OPENCHAMBER_PORT` |
 
 ## Usage

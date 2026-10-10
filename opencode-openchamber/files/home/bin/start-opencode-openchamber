@@ -1,101 +1,64 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
-export PATH="$HOME/.local/bin:$BUN_INSTALL/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 : "${OPENCODE_HOSTNAME:=127.0.0.1}"
 : "${OPENCODE_PORT:=4096}"
 : "${OPENCHAMBER_PORT:=3000}"
 : "${OPENCHAMBER_OPENCODE_HOSTNAME:=$OPENCODE_HOSTNAME}"
 : "${OPENCHAMBER_OPENCODE_PORT:=$OPENCODE_PORT}"
+: "${OPENCODE_READY_TIMEOUT:=60}"
 
 if [[ ! "$OPENCHAMBER_PORT" =~ ^[1-9][0-9]{0,4}$ ]] || ((OPENCHAMBER_PORT > 65535)); then
   echo "Error: OPENCHAMBER_PORT must be an integer between 1 and 65535." >&2
   exit 2
 fi
 
+if ! command -v openchamber >/dev/null 2>&1; then
+  echo "Error: openchamber is not installed or not on PATH." >&2
+  exit 1
+fi
+
 log_dir="$HOME/.local/state/opencode-openchamber"
 mkdir -p "$log_dir"
 
 OPENCHAMBER_PID_FILE="$log_dir/openchamber.pid"
-WAITER_PID=""
-OPENCODE_SERVICE_STARTED=0
 rm -f "$OPENCHAMBER_PID_FILE"
 
 cleanup() {
-  # Stop the background "wait for opencode" loop if it never got to start openchamber.
-  if [[ -n "$WAITER_PID" ]] && kill -0 "$WAITER_PID" 2>/dev/null; then
-    kill "$WAITER_PID" 2>/dev/null || true
-    wait "$WAITER_PID" 2>/dev/null || true
-  fi
-
+  # Stopping OpenChamber also stops the OpenCode server it manages.
   if [[ -f "$OPENCHAMBER_PID_FILE" ]]; then
-    if command -v openchamber >/dev/null 2>&1; then
-      openchamber stop --port "$OPENCHAMBER_PORT" >>"$log_dir/openchamber.log" 2>&1 || true
-    fi
+    openchamber stop --port "$OPENCHAMBER_PORT" >>"$log_dir/openchamber.log" 2>&1 || true
     rm -f "$OPENCHAMBER_PID_FILE"
-  fi
-
-  if [[ "$OPENCODE_SERVICE_STARTED" == "1" ]]; then
-    opencode service stop >/dev/null 2>&1 || true
   fi
 }
 
 trap cleanup EXIT INT TERM
 
-start_openchamber_after_opencode_ready() {
-  if ! command -v openchamber >/dev/null 2>&1; then
-    echo "Warning: openchamber is not installed or not on PATH; continuing with OpenCode TUI only." >&2
-    return 0
+# OpenChamber starts and restarts OpenCode (e.g. for updates) on a fixed address
+# with a fixed password, so the TUI can reconnect after every restart.
+OPENCODE_SERVER_PASSWORD="$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=\n')"
+export OPENCODE_SERVER_PASSWORD
+export OPENCODE_PASSWORD="$OPENCODE_SERVER_PASSWORD"
+export OPENCHAMBER_OPENCODE_HOSTNAME
+export OPENCHAMBER_OPENCODE_PORT
+
+opencode_url="http://${OPENCHAMBER_OPENCODE_HOSTNAME}:${OPENCHAMBER_OPENCODE_PORT}"
+
+openchamber --lan --port "$OPENCHAMBER_PORT" >"$log_dir/openchamber.log" 2>&1
+touch "$OPENCHAMBER_PID_FILE"
+echo "OpenChamber started on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
+
+# The daemon returns before OpenCode is up, and the TUI gives up if it cannot connect.
+echo "Waiting for OpenCode at ${opencode_url}..." >&2
+deadline=$((SECONDS + OPENCODE_READY_TIMEOUT))
+until curl -fs --max-time 2 -o /dev/null -u "opencode:${OPENCODE_SERVER_PASSWORD}" "${opencode_url}/api/info"; do
+  if ((SECONDS >= deadline)); then
+    echo "Error: OpenCode did not become ready at ${opencode_url}. See $log_dir/openchamber.log" >&2
+    exit 1
   fi
+  sleep 0.5
+done
 
-  echo "Waiting for OpenCode on ${OPENCODE_HOSTNAME}:${OPENCODE_PORT} before starting OpenChamber..." >&2
-
-  for _ in $(seq 1 120); do
-    if command -v nc >/dev/null 2>&1; then
-      if nc -z "$OPENCODE_HOSTNAME" "$OPENCODE_PORT" >/dev/null 2>&1; then
-        break
-      fi
-    else
-      if (echo >"/dev/tcp/${OPENCODE_HOSTNAME}/${OPENCODE_PORT}") >/dev/null 2>&1; then
-        break
-      fi
-    fi
-    sleep 0.5
-  done
-
-  if command -v nc >/dev/null 2>&1; then
-    nc -z "$OPENCODE_HOSTNAME" "$OPENCODE_PORT" >/dev/null 2>&1 || {
-      echo "Warning: OpenCode did not become reachable on ${OPENCODE_HOSTNAME}:${OPENCODE_PORT}; not starting OpenChamber." >&2
-      return 0
-    }
-  else
-    (echo >"/dev/tcp/${OPENCODE_HOSTNAME}/${OPENCODE_PORT}") >/dev/null 2>&1 || {
-      echo "Warning: OpenCode did not become reachable on ${OPENCODE_HOSTNAME}:${OPENCODE_PORT}; not starting OpenChamber." >&2
-      return 0
-    }
-  fi
-
-  export OPENCHAMBER_OPENCODE_HOSTNAME
-  export OPENCHAMBER_OPENCODE_PORT
-
-  openchamber --lan --port "$OPENCHAMBER_PORT" >"$log_dir/openchamber.log" 2>&1
-  touch "$OPENCHAMBER_PID_FILE"
-  echo "OpenChamber started in the background on port ${OPENCHAMBER_PORT}. Logs: $log_dir/openchamber.log" >&2
-}
-
-if [[ "$(opencode --version 2>/dev/null)" =~ ^opencode[[:space:]]v2\. ]]; then
-  opencode service set hostname "$OPENCODE_HOSTNAME"
-  opencode service set port "$OPENCODE_PORT"
-  opencode service start
-  OPENCODE_SERVICE_STARTED=1
-
-  export OPENCODE_SERVER_PASSWORD="$(opencode service get password)"
-  start_openchamber_after_opencode_ready
-  opencode "$@"
-else
-  start_openchamber_after_opencode_ready &
-  WAITER_PID=$!
-  opencode --hostname "$OPENCODE_HOSTNAME" --port "$OPENCODE_PORT" "$@"
-fi
+opencode --server "$opencode_url" "$@"

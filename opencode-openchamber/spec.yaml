@@ -2,7 +2,7 @@ schemaVersion: "2"
 kind: sandbox
 name: opencode-openchamber
 displayName: OpenChamber for OpenCode
-version: "3"
+version: "4"
 
 sandbox:
   image: "docker/sandbox-templates:opencode-docker"
@@ -39,7 +39,7 @@ setup:
         set -eu
         if command -v apt-get >/dev/null 2>&1; then
           sudo apt-get update
-          sudo apt-get install -y curl ca-certificates unzip jq bash git procps netcat-openbsd
+          sudo apt-get install -y curl ca-certificates unzip jq bash git procps
         fi
       description: Install requirements
     - command: |
