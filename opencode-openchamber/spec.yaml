@@ -44,6 +44,19 @@ setup:
       description: Install requirements
     - command: |
         set -eu
+        # Official sandbox image still ships v1 at time of writing
+        if npm ls -g --depth=0 opencode-ai >/dev/null 2>&1; then
+          npm uninstall -g opencode-ai
+        fi
+      user: "1000"
+      description: Remove OpenCode v1 if present
+    - command: |
+        set -euo pipefail
+        curl -fsSL https://opencode.ai/v2/install | bash
+      user: "1000"
+      description: Install OpenCode v2
+    - command: |
+        set -eu
         command -v openchamber >/dev/null 2>&1 || npm install -g @openchamber/web
       user: "1000"
       description: Install OpenChamber
