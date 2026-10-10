@@ -52,12 +52,12 @@ setup:
       description: Remove OpenCode v1 if present
     - command: |
         set -euo pipefail
-        curl -fsSL https://opencode.ai/v2/install | bash
+        npm install -g @opencode/cli
       user: "1000"
       description: Install OpenCode v2
     - command: |
         set -eu
-        command -v openchamber >/dev/null 2>&1 || npm install -g @openchamber/web
+        npm install -g @openchamber/web
       user: "1000"
       description: Install OpenChamber
     - command: |
