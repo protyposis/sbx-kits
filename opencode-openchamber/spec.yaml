@@ -33,6 +33,7 @@ permissions:
     allow:
       - opencode.ai
       - "**.opencode.ai"
+      - registry.npmjs.org
 
 ports:
   - container: 3000
@@ -72,3 +73,9 @@ setup:
         ln -sf "$(npm prefix -g)/bin/openchamber" /home/agent/.local/bin/openchamber
       user: "1000"
       description: Symlink OpenChamber binary to a directory on PATH
+  startup:
+    - command:
+        - sh
+        - -c
+        - npm install -g @opencode/cli@latest @openchamber/web@latest || echo "Update failed; using installed versions." >&2
+      description: Update OpenCode and OpenChamber
