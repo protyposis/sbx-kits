@@ -28,6 +28,12 @@ environment:
     OPENCHAMBER_OPENCODE_PORT: "4096"
     OPENCHAMBER_ALLOW_UNAUTHENTICATED_LAN: true
 
+permissions:
+  network:
+    allow:
+      - opencode.ai
+      - "**.opencode.ai"
+
 ports:
   - container: 3000
     protocol: tcp
