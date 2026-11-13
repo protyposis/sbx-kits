@@ -63,7 +63,7 @@ setup:
       description: Install OpenCode v2
     - command: |
         set -eu
-        npm install -g @openchamber/web
+        npm install -g @openchamber/web@latest
       user: "1000"
       description: Install OpenChamber
     - command: |
